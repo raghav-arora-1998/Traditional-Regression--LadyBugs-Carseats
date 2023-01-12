@@ -1,0 +1,168 @@
+---
+title: ""
+date: "`r Sys.Date()`"
+output:
+  rmdformats::readthedown:
+    highlight: kate
+---
+
+```{r setup, include=FALSE}
+## Global options
+knitr::opts_chunk$set(cache = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidymodels)
+library(here)
+library(ggplot2)
+library(modelr)
+library(ISLR)
+```
+
+# Problem 1
+
+In 1983 an article was published about ladybird beetles and their behavior changes under different temperature conditions (N. H. Copp. Animal Behavior, 31,:424-430). An experiment was run to see how many beetles stayed in light as temperature changed.
+
+1.  Read in the LadyBugs.csv data file into R.
+
+```{r}
+data <- read.csv(here("Data", "LadyBugs.csv"))
+```
+
+2.  Plot lighted (y) vs. temperature (x) to explore the data.
+
+```{r}
+data %>% 
+  ggplot(aes(x=Temp, y=Lighted)) +
+  geom_point()
+```
+
+3.  Describe the relationship you see. Is a straight line model going to fit these data well?
+
+-   As the temperature increases the lighted variable increases until a certain point (around 10) and then falls until a certain point (around 30) and then increases again. A straight line model is not going to fit these data.
+
+4.  Fit three polynomial regression models (of order at least 2, but you choose) to these data.
+
+```{r}
+datamodel1 <- lm(Lighted ~ poly(Temp, 2), data = data)
+summary(datamodel1)
+
+datamodel2 <- lm(Lighted ~ poly(Temp, 3), data = data)
+summary(datamodel2)
+
+datamodel3 <- lm(Lighted ~ poly(Temp, 4), data = data)
+summary(datamodel3)
+```
+
+5.Plot all of your models from (4) on top of the data in a new graph.
+
+```{r}
+data %>% 
+  ggplot(aes(x= data$Temp, y=data$Lighted)) +
+  geom_point() +
+  geom_smooth(method ='lm', formula=y ~ poly(x, 2), se = F, color = 'blue') +
+  geom_smooth(method ='lm', formula=y ~ poly(x, 3), se = F, color = 'red') +
+  geom_smooth(method ='lm', formula=y ~ poly(x, 4), se = F, color = 'green')
+```
+
+6.From the graph alone, which model do you think is best and why?
+
+-   Green, poly(x,4) fits the model best because it goes through the most points and has the highest polynomial order.
+
+7.  How do your models compare with respect to R-squared and RMSE?
+
+```{r}
+summary(datamodel1)
+summary(datamodel2)
+summary(datamodel3)
+
+rmse(datamodel1, data)
+rmse(datamodel2, data)
+rmse(datamodel3, data)
+```
+
+-Model 3 has the highest adjusted r squared and the lowest RMSE
+
+8.  Interpret the R2 value for your best model and produce one final plot with just your best model on top of the data.
+
+```{r}
+data %>% 
+  ggplot(aes(x= data$Temp, y=data$Lighted)) +
+  geom_point() +
+  geom_smooth(method ='lm', formula=y ~ poly(x, 4), se = F, color = 'green')
+```
+
+-   An r-squared of 78.11% reveals that 78.11% of the variability observed in the target variable (lighted) is explained by the regression model
+
+9.  Suppose you split these data into a training set (on which to train your model) and a test set (on which to test your model). Explain what you think would happen to the value of the training error as you increase the degree of the polynomial model fit to the data? What about the value of the test error? Be sure to explain your reasoning.
+
+-   The value of the training error and the test error will decrease as the the degree of the polynomial order increases. This is due to over fitting.
+
+# Problem 2
+
+This exercise uses the ISLR's Carseats data set, which contains information about car seat sales in 400 stores. You can load this dataset into R by simply running library(ISLR) after having installed the package.
+
+1.  Fit a multiple regression model to predict Sales using Price, Urban, and US. Report the coefficient estimates.
+
+```{r}
+Carseats_model <- lm(Sales~ Price + Urban + US, data = Carseats)
+summary(Carseats_model)
+```
+
+2.  Provide an interpretation of each coefficient in the model.
+
+-Intercept: 13.043 is the average of sales when price is equal to 0 and the carseat is neither urban nor US made. 
+-Price: \$1 increase in price decreases sales by 0.054. 
+-Urban: If the carseat is urban, sales decreases by 0.022. However, urban is not statistically significant. 
+-US: If the carseat is US made, sales increase by 1.200.
+
+3.  Write out the model in equation form. (Check this out for help with R Markdown and typing math)
+
+-   y = Beta_0 + \Beta\_1\*\X\_1 + \Beta\_2\*\X\_2 + \Beta\_3\*\X\_3 + e
+
+4.  Is at least one predictor useful in predicting Sales? Be sure to cite the information you're using to decide.
+
+-   Both Price and US are useful in predicting Sales.
+
+5.  For which predictors can you reject the null hypothesis H0:βj=0? Cite the information you're using to answer.
+
+-   You can reject the null hypothesis for both Price and US, since p value is less that 0.05.
+
+6.  Were all of the conditions for inference satisfied for your tests in (5)? Include whatever you used (graphs, etc.) to decide.
+
+```{r}
+plot(Carseats_model)
+```
+
+
+7.  On the basis of your response to (5), fit a smaller model that only uses the predictors for which there is evidence of an association with the outcome. Report the coefficient estimates.
+
+```{r}
+Carseats_model1 <- lm(Sales~ Price + US, data = Carseats)
+summary(Carseats_model)
+```
+
+8.  How well do the models in (1) and (7) fit the data? Cite the information you used to determine this.
+
+- For model 1, an r-squared of 23.35%% reveals that 23.35% of the variability observed in sales is explained by the regression model.
+- For model 2, an r-squared of 23.54%% reveals that 23.54% of the variability observed in sales is explained by the regression model. 
+- Model 1 has an RSE of 2.472
+- Model 2 has an RSE of 2.469, model 2 fits the data better.
+
+9.  Is there evidence of outliers or high leverage observations in the best model from (8)? Cite the information you used to assess this.
+
+```{r}
+plot(Carseats_model1)
+```
+
+- There is evidence of high leverage observations as seen by the plot.
+
+10. How did your different models compare with respect to R-squared and RMSE? Does this comparison match the conclusions you already came to?
+
+```{r}
+rmse(Carseats_model, Carseats)
+rmse(Carseats_model1, Carseats)
+```
+
+- They have very similar r squared values and RSME values with model 2 being slightly better for making predictions. This matches our initial conclusions. 
